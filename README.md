@@ -2,15 +2,32 @@
 
 This tool will decrypt your recovery keys.
 Commonly used when you lost them and want to recreate a root token.
+# Disclaimer
+*This is not an official HashiCorp tool*
+
+*Use it at your own risk*
 
 # Usage
-Currently only support GCP KMS. 
+```
+Usage of ./vault-recover-key:
+  -enc-key string
+    	Path to the encrypted recovery keys from the storage, found at core/_recovery-key (default "key.enc")
+  -env string
+    	Environment that hosts the KMS: gcpckms,azurekeyvault,transit (default "GCP")
+  -shamir-shares int
+    	Number of shamir shares to divide the key into (default 1)
+  -shamir-threshold int
+    	Threshold number of keys needed for shamir creation (default 1)
+```
+# Limitations
+Currently only support GCP and Azure KMS.
+
 It needs access to the KMS service which your Vault was configured with.
 Environmental variables that you need to set:
 
 Example, if you KMS setup is: `projects/rodrigo-support/locations/global/keyRings/vault/cryptoKeys/vault-unsealer/cryptoKeyVersions/1`
 
-## Environmental variables
+# Environmental variables for GCP
 ```sh
 $ export "GOOGLE_CREDENTIALS" = "service-account.json"
 $ export "GOOGLE_PROJECT" = "rodrigo-support"
@@ -18,20 +35,41 @@ $ export "GOOGLE_REGION" = "global"
 $ export "GCPCKMS_WRAPPER_KEY_RING" = "vault"
 $ export "GCPCKMS_WRAPPER_CRYPTO_KEY" = "vault-unsealer"
 ```
-
+# Environmental variables for AZURE
+```sh
+$ export "AZURE_TENANT_ID" = "XXX"
+$ export "AZURE_CLIENT_ID" = "XXXX"
+$ export "AZURE_CLIENT_SECRET" = "XXX"
+$ export "VAULT_AZUREKEYVAULT_VAULT_NAME" = "vault_name"
+$ export "VAULT_AZUREKEYVAULT_KEY_NAME" = "key_name"
+```
 ## Encrypted recovery keys dump
 From a file storage:
 
 ```
-$ cat _recovery-key  | jq -r .Value | base64 -d > key.enc
+$ cat core/_recovery-key  | jq -r .Value | base64 -d > key.enc
 ```
 
 ## Decryption
 
 ```log
-$ ./vault-recover-key
-INFO[0000] Starting
-DEBU[0000] blobInfo=ciphertext:"\xe0ng\x96\x96;\xa6zI\xf3\x18\x1c\x1d\x86c\x0b\xce\"y\xe6P\x9eU\xbc\xe8\xbb\x1c\xbc\xf0݉\x9c\x9di5\x89\xb7'\xff\x00\xb4\xe5\x11$\xc8x"  iv:"j'1\xee\xe4a\xa8\x04\xc1O\xc8B"  key_info:{Mechanism:1  KeyID:"projects/rodrigo-support/locations/global/keyRings/vault/cryptoKeys/vault-unsealer/cryptoKeyVersions/1"  WrappedKey:"\n$\x00\xeb\xdfR\xfb\x1eH\xdc\x1cBZ\xdb\x0b\xdc\\\xda\xf69\xe8\xc9\x17i\x85\xbc\x1f\xafW\xb7\xf23\xdft\xc6\x12I\x00\x0e\x15~\xb9\xe4aq\xc9D\x08;\x80\xbb /\x99\xf2о\x19s\xb6\xb6L\x9c\x90\xefm\xf5\xac\xfc\xe1ɇ8!,L\x0bu\x08Jc\x80\x8c\\B\xa5\xa0ײE\x8d\x90\xf6\xed#\x16\xfbc\x9b\xf9\xeb\x1dҹ?}\x9b\xfc\xe9\xb3"}
-DEBU[0000] HEX=0X86D9EC2995DF01B4807F938FD42277CD28E06FFF4AC3E41F55580671F6B38607
-BASE64=htnsKZXfAbSAf5OP1CJ3zSjgb/9Kw+QfVVgGcfazhgc=
+$ ./vault-recover-key -enc-key azure-key.enc -env azurekeyvault -shamir-shares 5 -shamir-threshold 3
+INFO[0000] Starting version 0.2
+INFO[0000] Starting with environment azurekeyvault
+INFO[0000] Setting up for azurekeyvault
+DEBU[0000] blobInfo={
+	"ciphertext": "sVi/u3CiFwcfiKajC0qK0+pS/St7/mReTN3mGHXN8l3TyDm/BEtGlL8ZapY+flS8",
+	"iv": "09CjA+ImIFBw7yYd",
+	"key_info": {
+		"KeyID": "3d035268cfd34001b34d739c704ceb1f",
+		"WrappedKey": "ZzRYVTNraXctLUx2ZzE2Ny1MbG9nanRvY3g5c3ZzcnBQTlNJeVdxdnFYYkJjVHR6UW14d1ZsaFBpdUVKbFliZW9qQk9UYmY5Q1hNQWpmVlAzVllsUDhtNThreW1qZl9IaFllZzAzNXdidmp3ZGZ2R1ZLV1YtSTZiOHJlVU9PdElsYTZTRmFRa3N2a0Y0cFBITGtwUVFoRG1tRVBHQ0huOXlXcUw0Q01XZWE1SDh6N2lRaGRham10cWgxRXZBS05zSWZwazVFaE9LemxWc1U1cXBQWHNhVmU5OVJiRVE1cV93aE11Y01HbzlQcU1ISGlPWmRzWGp3M25YWUc1RDNxUHRLQ3pmT2s5ZkFPUGhxNTktXzBuZm1LNVZqemtoQWpnMmNyT0F0VjVCemhNb3FNU2NhMXNXdXNpeDlId1FHVGNGTmw0SkdnRXRHb0VjMmhRUEp3MGpn"
+	}
+}
+DEBU[0000] HEX=0X53F336750B4D68C62BCB82CA3D9689D9C4F4261C21968BBCD6803979670C29CC
+INFO[0000] Recovery keys
+Nemi6Ry62LDhaGqguPxYGTZpvbmueYF+8kgsv4smSXzd
+wsxCRl/LixFihsxFUyZkwcuzHFNDVkgTGdghA3Y9kQWk
+i7LU05v5yr5+WBD22AAvPFikKF12n24xdl4ge+n9LKKf
+D5wepAo7kl9tfrQJAO5ORfCFGduW94GJWknn3sr6hOQU
+oQx5/uLfVE7m3B8PhSv+aVYKYxSG0cos2EO8ZOpJwKAc
 ```
