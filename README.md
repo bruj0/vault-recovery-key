@@ -13,7 +13,7 @@ Usage of ./vault-recover-key:
   -enc-key string
     	Path to the encrypted recovery keys from the storage, found at core/_recovery-key (default "key.enc")
   -env string
-    	Environment that hosts the KMS: gcpckms,azurekeyvault,transit (default "GCP")
+    	Environment that hosts the KMS: gcpckms,azurekeyvault,transit (default "gcpckms")
   -shamir-shares int
     	Number of shamir shares to divide the key into (default 1)
   -shamir-threshold int
@@ -23,11 +23,10 @@ Usage of ./vault-recover-key:
 Currently only support GCP and Azure KMS.
 
 It needs access to the KMS service which your Vault was configured with.
-Environmental variables that you need to set:
-
-Example, if you KMS setup is: `projects/rodrigo-support/locations/global/keyRings/vault/cryptoKeys/vault-unsealer/cryptoKeyVersions/1`
 
 # Environmental variables for GCP
+Example, if you KMS setup is: `projects/rodrigo-support/locations/global/keyRings/vault/cryptoKeys/vault-unsealer/cryptoKeyVersions/1`
+
 ```sh
 $ export "GOOGLE_CREDENTIALS" = "service-account.json"
 $ export "GOOGLE_PROJECT" = "rodrigo-support"
@@ -36,24 +35,41 @@ $ export "GCPCKMS_WRAPPER_KEY_RING" = "vault"
 $ export "GCPCKMS_WRAPPER_CRYPTO_KEY" = "vault-unsealer"
 ```
 # Environmental variables for AZURE
+If your Vault configuration is:
+
+```
+seal "azurekeyvault" {
+  client_id      = "YOUR-APP-ID"
+  client_secret  = "YOUR-APP-PASSWORD"
+  tenant_id      = "YOUR-AZURE-TENANT-ID"
+  vault_name     = "rodrigo-key-vault"
+  key_name       = "generated-key"
+}
+```
+
 ```sh
-$ export "AZURE_TENANT_ID" = "XXX"
-$ export "AZURE_CLIENT_ID" = "XXXX"
-$ export "AZURE_CLIENT_SECRET" = "XXX"
-$ export "VAULT_AZUREKEYVAULT_VAULT_NAME" = "vault_name"
-$ export "VAULT_AZUREKEYVAULT_KEY_NAME" = "key_name"
+$ export "AZURE_TENANT_ID" = "YOUR-AZURE-TENANT-ID"
+$ export "AZURE_CLIENT_ID" = "YOUR-APP-ID"
+$ export "AZURE_CLIENT_SECRET" = "YOUR-APP-PASSWORD"
+$ export "VAULT_AZUREKEYVAULT_VAULT_NAME" = "rodrigo-key-vault"
+$ export "VAULT_AZUREKEYVAULT_KEY_NAME" = "generated-key"
 ```
 ## Encrypted recovery keys dump
-From a file storage:
+### From a file storage:
 
 ```
 $ cat core/_recovery-key  | jq -r .Value | base64 -d > key.enc
 ```
 
+### From Consul
+```
+$ consul kv get -base64 vault/core/recovery-key  | base64 -d >  consul.key
+```
+
 ## Decryption
 
 ```log
-$ ./vault-recover-key -enc-key azure-key.enc -env azurekeyvault -shamir-shares 5 -shamir-threshold 3
+$ ./vault-recover-key -enc-key key.enc -env azurekeyvault -shamir-shares 5 -shamir-threshold 3
 INFO[0000] Starting version 0.2
 INFO[0000] Starting with environment azurekeyvault
 INFO[0000] Setting up for azurekeyvault

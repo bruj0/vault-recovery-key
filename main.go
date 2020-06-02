@@ -43,7 +43,7 @@ func main() {
 	log.SetLevel(log.DebugLevel)
 	log.Infof("Starting version %s", version)
 
-	cloud := flag.String("env", "GCP", "Environment that hosts the KMS: gcpckms,azurekeyvault,transit")
+	cloud := flag.String("env", "gcpckms", "Environment that hosts the KMS: gcpckms,azurekeyvault,transit")
 	encKey := flag.String("enc-key", "key.enc", "Path to the encrypted recovery keys from the storage, found at core/_recovery-key")
 	shares := flag.Int("shamir-shares", 1, "Number of shamir shares to divide the key into")
 	threshold := flag.Int("shamir-threshold", 1, "Threshold number of keys needed for shamir creation")
