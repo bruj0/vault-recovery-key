@@ -2,6 +2,8 @@
 
 This tool will decrypt your recovery keys.
 Commonly used when you lost them and want to recreate a root token.
+
+Download the binary from [releases](https://github.com/bruj0/vault-recovery-key/releases/) 
 # Disclaimer
 *This is not an official HashiCorp tool*
 
