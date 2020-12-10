@@ -1,4 +1,6 @@
-on: release
+on:
+  release:
+    types: [published]
 name: Build Release
 jobs:
   release-linux-386:
@@ -30,8 +32,10 @@ jobs:
     steps:
     - uses: actions/checkout@master
     - name: compile and release
-      uses: ngs/go-release.action@v1.0.1
+      uses: ngs/go-release.action@master  
       env:
+        PROJECT_NAME: vault-recovery-key
+        EXTRA_FILES: ""
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         GOARCH: amd64
         GOOS: darwin
