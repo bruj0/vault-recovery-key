@@ -35,6 +35,7 @@ jobs:
       uses: ngs/go-release.action@master  
       env:
         PROJECT_NAME: vault-recovery-key
+        EXTRA_FILES: ""
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         GOARCH: amd64
         GOOS: darwin
