@@ -1,5 +1,3 @@
 *.json
 setup.sh
-go.sum
-go.mod
 vault-recovery-key
