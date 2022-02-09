@@ -66,7 +66,7 @@ func main() {
 	var wrapper wrapping.Wrapper
 
 	switch *cloud {
-	case "gcpkms":
+	case "gcpckms":
 		wrapper, err = getWrapperGcp()
 	case "azurekeyvault":
 		wrapper, err = getWrapperAzure()
@@ -128,7 +128,7 @@ func main() {
 
 }
 func getWrapperGcp() (wrapping.Wrapper, error) {
-	log.Infof("Setting up for gcpkms")
+	log.Infof("Setting up for gcpckms")
 	gcpCheckAndSetEnvVars()
 	config := map[string]string{
 		"credentials": os.Getenv("GOOGLE_APPLICATION_CREDENTIALS"),

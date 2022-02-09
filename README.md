@@ -91,3 +91,42 @@ i7LU05v5yr5+WBD22AAvPFikKF12n24xdl4ge+n9LKKf
 D5wepAo7kl9tfrQJAO5ORfCFGduW94GJWknn3sr6hOQU
 oQx5/uLfVE7m3B8PhSv+aVYKYxSG0cos2EO8ZOpJwKAc
 ```
+
+# Troubleshooting
+This page lists solutions to problems you might encounter with `vault-recovery-key`
+
+## Issue
+### Application crash during runtime when using `gcpckms`:
+  ```
+  ./vault-recovery-key -enc-key enc.key -env gcpckms -shamir-shares 5 -shamir-threshold 3
+INFO[0000] Starting version 0.2
+INFO[0000] Starting with environment gcpckms
+INFO[0000] Setting up for gcpckms
+DEBU[0000] blobInfo={
+	"ciphertext": "rWUAXlSnzRTYlA5MxQ8Cdoz32yRD9Bk6BF00oodgukmFjUmP0tR1EhZd6IvP4KkI",
+	"iv": "e1YE0TZ0Z0Yfnwdj",
+	"key_info": {
+		"Mechanism": 1,
+		"KeyID": "projects/hc-5d80c603dabb4a669f42e6354a1/locations/global/keyRings/vault-keyring/cryptoKeys/vault-key/cryptoKeyVersions/1",
+		"WrappedKey": "CiQA2AIm8C9WyKu9/uUiNUYyng5nK2fKfX0ZDfR2JPupygg3P50SSAB3Uh/JATR2KCPMmXS3e6gkE3UwBXnFr3Bky06Z83lKS/7QOp4bmJXhcckML17F5MdIFyZXmrFLoi1tN44mEROYiE9TQGcUvA=="
+	}
+}
+panic: runtime error: invalid memory address or nil pointer dereference
+[signal SIGSEGV: segmentation violation code=0x1 addr=0x18 pc=0x56f834]
+
+goroutine 1 [running]:
+main.main()
+	/home/ubuntu/vault-recovery-key/main.go:108 +0x6b4
+  ```
+## Solution
+Check the following variables and their values. Check that the service account has been granted access to the keyring and key.
+
+```
+$ export "GOOGLE_CREDENTIALS" = "service-account.json"
+$ export "GOOGLE_PROJECT" = "rodrigo-support"
+$ export "GOOGLE_REGION"="global"
+$ export "GCPCKMS_WRAPPER_KEY_RING" = "vault"
+$ export "GCPCKMS_WRAPPER_CRYPTO_KEY" = "vault-unsealer"
+```
+# Additional information
+Tested and verified to work against Vault 1.9.3 using `gcpckms` Auto-Unseal.
