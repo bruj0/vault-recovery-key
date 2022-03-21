@@ -12,6 +12,7 @@ import (
 	wrapping "github.com/hashicorp/go-kms-wrapping"
 	"github.com/hashicorp/go-kms-wrapping/wrappers/azurekeyvault"
 	"github.com/hashicorp/go-kms-wrapping/wrappers/gcpckms"
+	"github.com/hashicorp/go-kms-wrapping/wrappers/awskms"
 
 	"encoding/base64"
 	"encoding/json"
@@ -43,7 +44,7 @@ func main() {
 	log.SetLevel(log.DebugLevel)
 	log.Infof("Starting version %s", version)
 
-	cloud := flag.String("env", "gcpckms", "Environment that hosts the KMS: gcpckms,azurekeyvault,transit")
+	cloud := flag.String("env", "gcpckms", "Environment that hosts the KMS: gcpckms,azurekeyvault,transit,awskms")
 	encKey := flag.String("enc-key", "key.enc", "Path to the encrypted recovery keys from the storage, found at core/_recovery-key")
 	shares := flag.Int("shamir-shares", 1, "Number of shamir shares to divide the key into")
 	threshold := flag.Int("shamir-threshold", 1, "Threshold number of keys needed for shamir creation")
@@ -70,6 +71,8 @@ func main() {
 		wrapper, err = getWrapperGcp()
 	case "azurekeyvault":
 		wrapper, err = getWrapperAzure()
+	case "awskms":
+		wrapper, err = getWrapperAws()
 	default:
 		log.Fatalf("Environment not implemented: %s", *cloud)
 
@@ -127,6 +130,24 @@ func main() {
 	}
 
 }
+
+func getWrapperAws() (wrapping.Wrapper,error) {
+	log.Infof("Setting up for awskms")
+	s := awskms.NewWrapper(nil)
+	#Credentials to access AWS KMS are provided via ENV variables:
+	#AWS_ACCESS_KEY_ID
+	#AWS_SECRET_ACCESS_KEY
+	#AWS_SESSION_TOKEN
+	#AWS_SESSION_EXPIRATION
+	#The key ID is provided via AWSKMS_WRAPPER_KEY_ID env variable
+	_, err := s.SetConfig(nil)
+	if err != nil {
+		return nil, err
+	}
+	return s, nil
+}
+
+
 func getWrapperGcp() (wrapping.Wrapper, error) {
 	log.Infof("Setting up for gcpckms")
 	gcpCheckAndSetEnvVars()
