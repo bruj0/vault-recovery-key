@@ -134,12 +134,6 @@ func main() {
 func getWrapperAws() (wrapping.Wrapper,error) {
 	log.Infof("Setting up for awskms")
 	s := awskms.NewWrapper(nil)
-	#Credentials to access AWS KMS are provided via ENV variables:
-	#AWS_ACCESS_KEY_ID
-	#AWS_SECRET_ACCESS_KEY
-	#AWS_SESSION_TOKEN
-	#AWS_SESSION_EXPIRATION
-	#The key ID is provided via AWSKMS_WRAPPER_KEY_ID env variable
 	_, err := s.SetConfig(nil)
 	if err != nil {
 		return nil, err
