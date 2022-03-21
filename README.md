@@ -59,7 +59,7 @@ $ export "VAULT_AZUREKEYVAULT_KEY_NAME" = "generated-key"
 
 # Environmental variables for AWS KMS
 
-```
+```sh
 export AWS_ACCESS_KEY_ID = "YOUR_ACCESS_KEY_ID_HERE"
 export AWS_SECRET_ACCESS_KEY = "YOUR_SECRET_ID_HERE"
 export AWS_SESSION_TOKEN = "YOUR_SESSION_TOKEN_HERE" (this one is optional, if STS creds are used)
