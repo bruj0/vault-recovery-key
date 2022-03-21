@@ -104,7 +104,7 @@ oQx5/uLfVE7m3B8PhSv+aVYKYxSG0cos2EO8ZOpJwKAc
 
 AWS KMS example:
 
-```
+```log
  ./vault-recovery-key -enc-key ../key.enc -env awskms
 INFO[0000] Starting version 0.2
 INFO[0000] Starting with environment awskms
@@ -121,6 +121,7 @@ DEBU[0000] blobInfo={
 DEBU[0000] HEX=0X4124F68E<<<SNIP>>>291DE7114A89B
 Recovery key
 QST2jpzI44gf/mvssOsBT//FjMIFjOuxKOKR3nEUqJs=%
+```
 
 # Troubleshooting
 This page lists solutions to problems you might encounter with `vault-recovery-key`
