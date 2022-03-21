@@ -15,14 +15,14 @@ Usage of ./vault-recover-key:
   -enc-key string
     	Path to the encrypted recovery keys from the storage, found at core/_recovery-key (default "key.enc")
   -env string
-    	Environment that hosts the KMS: gcpckms,azurekeyvault,transit (default "gcpckms")
+    	Environment that hosts the KMS: gcpckms,azurekeyvault,transit,awskms (default "gcpckms")
   -shamir-shares int
     	Number of shamir shares to divide the key into (default 1)
   -shamir-threshold int
     	Threshold number of keys needed for shamir creation (default 1)
 ```
 # Limitations
-Currently only support GCP and Azure KMS.
+Currently only support GCP, Azure KMS and AWS KMS.
 
 It needs access to the KMS service which your Vault was configured with.
 
@@ -56,6 +56,16 @@ $ export "AZURE_CLIENT_SECRET" = "YOUR-APP-PASSWORD"
 $ export "VAULT_AZUREKEYVAULT_VAULT_NAME" = "rodrigo-key-vault"
 $ export "VAULT_AZUREKEYVAULT_KEY_NAME" = "generated-key"
 ```
+
+# Environmental variables for AWS KMS
+
+```sh
+export AWS_ACCESS_KEY_ID = "YOUR_ACCESS_KEY_ID_HERE"
+export AWS_SECRET_ACCESS_KEY = "YOUR_SECRET_ID_HERE"
+export AWS_SESSION_TOKEN = "YOUR_SESSION_TOKEN_HERE" (this one is optional, if STS creds are used)
+export AWSKMS_WRAPPER_KEY_ID = "YOUR_KMS_KEY_ID_HERE" (the KMS used in the Vault HCL config)
+```
+
 ## Encrypted recovery keys dump
 ### From a file storage:
 
@@ -90,6 +100,27 @@ wsxCRl/LixFihsxFUyZkwcuzHFNDVkgTGdghA3Y9kQWk
 i7LU05v5yr5+WBD22AAvPFikKF12n24xdl4ge+n9LKKf
 D5wepAo7kl9tfrQJAO5ORfCFGduW94GJWknn3sr6hOQU
 oQx5/uLfVE7m3B8PhSv+aVYKYxSG0cos2EO8ZOpJwKAc
+```
+
+AWS KMS example:
+
+```log
+ ./vault-recovery-key -enc-key ../key.enc -env awskms
+INFO[0000] Starting version 0.2
+INFO[0000] Starting with environment awskms
+INFO[0000] Setting up for awskms
+DEBU[0000] blobInfo={
+	"ciphertext": "ESGKIwFd/uGtnCJJV86/gwE3oCz6Yx74DMVNRTjSE4U+kVL90jiNLYvPJqh7T8pK",
+	"iv": "RcvcMe4xZvI15/Gb",
+	"key_info": {
+		"Mechanism": 1,
+		"KeyID": "arn:aws:kms:us-east-1:ACCOUNT_ID_HERE:key/KMS_KEY_ID_HERE",
+		"WrappedKey": "AQICAHjy4AAl3/<<<SNIP>>>GLVdp6dcF/ih+NDDnnJastg=="
+	}
+}
+DEBU[0000] HEX=0X4124F68E<<<SNIP>>>291DE7114A89B
+Recovery key
+QST2jpzI44gf/mvssOsBT//FjMIFjOuxKOKR3nEUqJs=%
 ```
 
 # Troubleshooting
