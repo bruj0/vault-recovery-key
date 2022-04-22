@@ -27,15 +27,18 @@ Currently only support GCP, Azure KMS and AWS KMS.
 It needs access to the KMS service which your Vault was configured with.
 
 # Environmental variables for GCP
-Example, if you KMS setup is: `projects/rodrigo-support/locations/global/keyRings/vault/cryptoKeys/vault-unsealer/cryptoKeyVersions/1`
+Example, if your KMS setup is: `projects/rodrigo-support/locations/global/keyRings/name-of-keyring-goes-here/cryptoKeys/name-of-vault-unseal-key-from-keyring-goes-here/cryptoKeyVersions/1`
 
 ```sh
 $ export "GOOGLE_CREDENTIALS" = "service-account.json"
-$ export "GOOGLE_PROJECT" = "rodrigo-support"
+$ export "GOOGLE_PROJECT" = "project-id-goes-here"
 $ export "GOOGLE_REGION" = "global"
-$ export "GCPCKMS_WRAPPER_KEY_RING" = "vault"
-$ export "GCPCKMS_WRAPPER_CRYPTO_KEY" = "vault-unsealer"
+$ export "GCPCKMS_WRAPPER_KEY_RING" = "name-of-keyring-goes-here"
+$ export "GCPCKMS_WRAPPER_CRYPTO_KEY" = "name-of-vault-unseal-key-from-keyring-goes-here"
 ```
+
+An important note: the relevant KMS environment variables are `GCPCKMS_...` not `GCPKMS_...`. This is a potential cause of the panic issue listed below.
+
 # Environmental variables for AZURE
 If your Vault configuration is:
 
@@ -150,14 +153,14 @@ main.main()
 	/home/ubuntu/vault-recovery-key/main.go:108 +0x6b4
   ```
 ## Solution
-Check the following variables and their values. Check that the service account has been granted access to the keyring and key.
+Check the following variables and their values. Check that the service account has been granted access to the keyring and key. Ensure that you've set the proper environment variables, most notably the key ring and crypto key variables (these env variables start with `GCPCKMS`, not `GCPKMS`). Ensure that you've set the GCP project ID and not the name of the project.
 
 ```
 $ export "GOOGLE_CREDENTIALS" = "service-account.json"
-$ export "GOOGLE_PROJECT" = "rodrigo-support"
-$ export "GOOGLE_REGION"="global"
-$ export "GCPCKMS_WRAPPER_KEY_RING" = "vault"
-$ export "GCPCKMS_WRAPPER_CRYPTO_KEY" = "vault-unsealer"
+$ export "GOOGLE_PROJECT" = "project-id-goes-here"
+$ export "GOOGLE_REGION" = "global"
+$ export "GCPCKMS_WRAPPER_KEY_RING" = "name-of-keyring-goes-here"
+$ export "GCPCKMS_WRAPPER_CRYPTO_KEY" = "name-of-vault-unseal-key-from-keyring-goes-here"
 ```
 # Additional information
-Tested and verified to work against Vault 1.9.3 using `gcpckms` Auto-Unseal.
+Tested and verified to work against Vault 1.8.1 and 1.9.3 using `gcpckms` Auto-Unseal.
