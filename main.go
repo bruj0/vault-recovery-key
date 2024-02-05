@@ -4,15 +4,15 @@ import (
 	"bufio"
 	"flag"
 	"fmt"
-	"os"
-
 	proto "github.com/golang/protobuf/proto"
 	context "golang.org/x/net/context"
+	"io/ioutil"
+	"os"
 
 	wrapping "github.com/hashicorp/go-kms-wrapping"
+	"github.com/hashicorp/go-kms-wrapping/wrappers/awskms"
 	"github.com/hashicorp/go-kms-wrapping/wrappers/azurekeyvault"
 	"github.com/hashicorp/go-kms-wrapping/wrappers/gcpckms"
-	"github.com/hashicorp/go-kms-wrapping/wrappers/awskms"
 
 	"encoding/base64"
 	"encoding/json"
@@ -46,6 +46,7 @@ func main() {
 
 	cloud := flag.String("env", "gcpckms", "Environment that hosts the KMS: gcpckms,azurekeyvault,transit,awskms")
 	encKey := flag.String("enc-key", "key.enc", "Path to the encrypted recovery keys from the storage, found at core/_recovery-key")
+	storageType := flag.String("storage-type", "file", "Storage type: file or dynamodb")
 	shares := flag.Int("shamir-shares", 1, "Number of shamir shares to divide the key into")
 	threshold := flag.Int("shamir-threshold", 1, "Threshold number of keys needed for shamir creation")
 
@@ -56,14 +57,28 @@ func main() {
 		os.Exit(1)
 	}
 
+	if *storageType == "dynamodb" {
+		// If storage type is DynamoDB, set cloud to "awskms"
+		*cloud = "awskms"
+	}
+
 	log.Infof("Starting with environment %s", *cloud)
 
-	env, err := readBin(*encKey)
+	env := []byte{}
+	var err error
+	if *storageType == "dynamodb" {
+		// If storage type is DynamoDB, use base64 decoding
+		env, err = readBinBase64Decode(*encKey)
 
+	} else {
+		// For other storage types, use regular file reading
+		env, err = readBin(*encKey)
+	}
 	if err != nil {
 		log.Fatalf("Couldnt read file: %s", err)
 		os.Exit(1)
 	}
+
 	var wrapper wrapping.Wrapper
 
 	switch *cloud {
@@ -131,7 +146,7 @@ func main() {
 
 }
 
-func getWrapperAws() (wrapping.Wrapper,error) {
+func getWrapperAws() (wrapping.Wrapper, error) {
 	log.Infof("Setting up for awskms")
 	s := awskms.NewWrapper(nil)
 	_, err := s.SetConfig(nil)
@@ -140,7 +155,6 @@ func getWrapperAws() (wrapping.Wrapper,error) {
 	}
 	return s, nil
 }
-
 
 func getWrapperGcp() (wrapping.Wrapper, error) {
 	log.Infof("Setting up for gcpckms")
@@ -169,6 +183,26 @@ func getWrapperAzure() (wrapping.Wrapper, error) {
 	return s, nil
 
 }
+func readBinBase64Decode(filename string) ([]byte, error) {
+	file, err := os.Open(filename)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	content, err := ioutil.ReadAll(file)
+	if err != nil {
+		return nil, err
+	}
+
+	decodedBytes, err := base64.StdEncoding.DecodeString(string(content))
+	if err != nil {
+		return nil, err
+	}
+
+	return decodedBytes, nil
+}
+
 func readBin(filename string) ([]byte, error) {
 	file, err := os.Open(filename)
 
