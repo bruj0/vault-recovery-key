@@ -20,6 +20,8 @@ Usage of ./vault-recover-key:
     	Number of shamir shares to divide the key into (default 1)
   -shamir-threshold int
     	Threshold number of keys needed for shamir creation (default 1)
+  -storageType string
+        Storage type: file or dynamodb
 ```
 # Limitations
 Currently only support GCP, Azure KMS and AWS KMS.
