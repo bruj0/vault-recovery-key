@@ -68,8 +68,10 @@ $ export "VAULT_AZUREKEYVAULT_KEY_NAME" = "generated-key"
 export AWS_ACCESS_KEY_ID = "YOUR_ACCESS_KEY_ID_HERE"
 export AWS_SECRET_ACCESS_KEY = "YOUR_SECRET_ID_HERE"
 export AWS_SESSION_TOKEN = "YOUR_SESSION_TOKEN_HERE" (this one is optional, if STS creds are used)
-export AWSKMS_WRAPPER_KEY_ID = "YOUR_KMS_KEY_ID_HERE" (the KMS used in the Vault HCL config)
 ```
+
+Optionally, you can also set `AWSKMS_WRAPPER_KEY_ID` environment variable as well. If not set, the tool will fetch
+the key details from the `key.enc`
 
 ## Encrypted recovery keys dump
 ### From a file storage:
@@ -81,6 +83,15 @@ $ cat core/_recovery-key  | jq -r .Value | base64 -d > key.enc
 ### From Consul
 ```
 $ consul kv get -base64 vault/core/recovery-key  | base64 -d >  consul.key
+```
+
+### From MySQL
+```mysql
+SELECT TO_BASE64(vault_value) FROM vault WHERE vault_key = _binary 'core/recovery-key'
+```
+
+```shell
+$ echo "<base64 encoded value from the above query>" | base64 > key.enc
 ```
 
 ## Decryption
@@ -124,6 +135,7 @@ DEBU[0000] blobInfo={
 	}
 }
 DEBU[0000] HEX=0X4124F68E<<<SNIP>>>291DE7114A89B
+DEBU[0000] fetching KMS key details from KeyInfo=arn:aws:kms:us-east-1:ACCOUNT_ID_HERE:key/KMS_KEY_ID_HERE
 Recovery key
 QST2jpzI44gf/mvssOsBT//FjMIFjOuxKOKR3nEUqJs=%
 ```

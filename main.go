@@ -2,20 +2,21 @@ package main
 
 import (
 	"bufio"
+	"encoding/base64"
+	"encoding/json"
 	"flag"
 	"fmt"
+	"io"
+	"os"
+	"strings"
+
 	proto "github.com/golang/protobuf/proto"
 	context "golang.org/x/net/context"
-	"io/ioutil"
-	"os"
 
 	wrapping "github.com/hashicorp/go-kms-wrapping"
 	"github.com/hashicorp/go-kms-wrapping/wrappers/awskms"
 	"github.com/hashicorp/go-kms-wrapping/wrappers/azurekeyvault"
 	"github.com/hashicorp/go-kms-wrapping/wrappers/gcpckms"
-
-	"encoding/base64"
-	"encoding/json"
 
 	"github.com/hashicorp/vault/shamir"
 	log "github.com/sirupsen/logrus"
@@ -79,19 +80,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	var wrapper wrapping.Wrapper
-
-	switch *cloud {
-	case "gcpckms":
-		wrapper, err = getWrapperGcp()
-	case "azurekeyvault":
-		wrapper, err = getWrapperAzure()
-	case "awskms":
-		wrapper, err = getWrapperAws()
-	default:
-		log.Fatalf("Environment not implemented: %s", *cloud)
-
-	}
 	/* 	message EncryptedBlobInfo {
 		// Ciphertext is the encrypted bytes
 	    bytes ciphertext = 1;
@@ -123,6 +111,24 @@ func main() {
 	blobStr := prettyPrint(blobInfo)
 	log.Debugf("blobInfo=%s", blobStr)
 
+	var wrapper wrapping.Wrapper
+
+	switch *cloud {
+	case "gcpckms":
+		wrapper, err = getWrapperGcp()
+	case "azurekeyvault":
+		wrapper, err = getWrapperAzure()
+	case "awskms":
+		wrapper, err = getWrapperAws(blobInfo)
+	default:
+		log.Fatalf("Environment not implemented: %s", *cloud)
+
+	}
+
+	if err != nil {
+		log.Fatalf("Couldnt create KMS wrapper: %s", err)
+	}
+
 	pt, err := wrapper.Decrypt(context.Background(), blobInfo, nil)
 	if err != nil {
 		log.Errorf("failed to decrypt encrypted stored keys: %s", err)
@@ -146,10 +152,18 @@ func main() {
 
 }
 
-func getWrapperAws() (wrapping.Wrapper, error) {
+func getWrapperAws(blob *wrapping.EncryptedBlobInfo) (wrapping.Wrapper, error) {
 	log.Infof("Setting up for awskms")
 	s := awskms.NewWrapper(nil)
-	_, err := s.SetConfig(nil)
+	config := map[string]string{}
+	keyInfo := strings.Split(blob.GetKeyInfo().KeyID, ":")
+	if len(keyInfo) == 6 {
+		log.Debugf("fetching KMS key details from KeyInfo=%s", blob.GetKeyInfo().KeyID)
+		config["region"] = keyInfo[3]
+		config["kms_key_id"], _ = strings.CutPrefix(keyInfo[5], "key/")
+	}
+
+	_, err := s.SetConfig(config)
 	if err != nil {
 		return nil, err
 	}
@@ -190,7 +204,7 @@ func readBinBase64Decode(filename string) ([]byte, error) {
 	}
 	defer file.Close()
 
-	content, err := ioutil.ReadAll(file)
+	content, err := io.ReadAll(file)
 	if err != nil {
 		return nil, err
 	}
