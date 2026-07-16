@@ -167,7 +167,7 @@ func getWrapperAws(blob *wrapping.EncryptedBlobInfo) (wrapping.Wrapper, error) {
 	if len(keyInfo) == 6 {
 		log.Debugf("fetching KMS key details from KeyInfo=%s", blob.GetKeyInfo().KeyID)
 		config["region"] = keyInfo[3]
-		config["kms_key_id"], _ = strings.CutPrefix(keyInfo[5], "key/")
+		config["kms_key_id"] = strings.TrimPrefix(keyInfo[5], "key/")
 	}
 
 	_, err := s.SetConfig(config)
