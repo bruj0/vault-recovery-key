@@ -15,7 +15,7 @@ Usage of ./vault-recover-key:
   -enc-key string
     	Path to the encrypted recovery keys from the storage, found at core/_recovery-key (default "key.enc")
   -env string
-    	Environment that hosts the KMS: gcpckms,azurekeyvault,transit,awskms (default "gcpckms")
+    	Environment that hosts the KMS: gcpckms,azurekeyvault,transit,awskms,yandexcloudkms (default "gcpckms")
   -shamir-shares int
     	Number of shamir shares to divide the key into (default 1)
   -shamir-threshold int
@@ -24,7 +24,7 @@ Usage of ./vault-recover-key:
         Storage type: file or dynamodb
 ```
 # Limitations
-Currently only support GCP, Azure KMS and AWS KMS.
+Currently only support GCP, Azure KMS, AWS KMS and Yandex Cloud KMS.
 
 It needs access to the KMS service which your Vault was configured with.
 
@@ -72,6 +72,29 @@ export AWS_SESSION_TOKEN = "YOUR_SESSION_TOKEN_HERE" (this one is optional, if S
 
 Optionally, you can also set `AWSKMS_WRAPPER_KEY_ID` environment variable as well. If not set, the tool will fetch
 the key details from the `key.enc`
+
+# Environmental variables for Yandex Cloud KMS
+
+Works with Vault builds that support the `yandexcloudkms` seal (the [Yandex Cloud Vault fork](https://github.com/yandex-cloud/vault) and the Marketplace/Managed Vault images). If your Vault configuration is:
+
+```
+seal "yandexcloudkms" {
+  kms_key_id = "abjb1f2gh3ij4kl5mno6"
+}
+```
+
+```sh
+$ export YANDEXCLOUD_KMS_KEY_ID="abjb1f2gh3ij4kl5mno6"
+# Authentication - pick ONE of:
+$ export YANDEXCLOUD_OAUTH_TOKEN="YOUR-OAUTH-TOKEN"                        # Yandex account
+$ export YANDEXCLOUD_SERVICE_ACCOUNT_KEY_FILE="authorized-key.json"        # service account authorized key
+# or run the tool on a Yandex Cloud VM with an attached service account (metadata auth is used automatically)
+```
+
+Notes:
+* `YANDEXCLOUD_KMS_KEY_ID` is mandatory: the encrypted blob only stores the key *version* ID, so the KMS key ID cannot be derived from `key.enc`.
+* The service account (or user) needs the `kms.keys.encrypterDecrypter` role on the key — the KMS client performs a test encryption on startup, so decrypt-only permissions are not enough.
+* `-env yckms` is accepted as an alias for `-env yandexcloudkms`.
 
 ## Encrypted recovery keys dump
 ### From a file storage:
