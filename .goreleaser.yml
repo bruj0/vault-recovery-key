@@ -16,10 +16,40 @@ builds:
       - -mod=readonly
     ldflags:
       - -s -w -X main.version={{.Version}}
+  - id: linux-amd64
+    main: ./
+    binary: golang-cross
+    goos:
+      - linux
+    goarch:
+      - amd64
+    env:
+      - GO111MODULE=on
+    flags:
+      - -mod=readonly
+    ldflags:
+      - -s -w -X main.version={{.Version}}
+  - id: linux-arm
+    main: ./
+    binary: golang-cross
+    goos:
+      - linux
+    goarch:
+      - arm
+    goarm:
+      - '7'
+    env:
+      - GO111MODULE=on
+    flags:
+      - -mod=readonly
+    ldflags:
+      - -s -w -X main.version={{.Version}}
 archives:
   - id: golang-cross
     builds:
       - darwin-amd64
+      - linux-amd64
+      - linux-arm
     name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
     format: zip
     wrap_in_directory: true
