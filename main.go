@@ -17,6 +17,7 @@ import (
 	"github.com/hashicorp/go-kms-wrapping/wrappers/awskms"
 	"github.com/hashicorp/go-kms-wrapping/wrappers/azurekeyvault"
 	"github.com/hashicorp/go-kms-wrapping/wrappers/gcpckms"
+	"github.com/hashicorp/go-kms-wrapping/wrappers/yandexcloudkms"
 
 	"github.com/hashicorp/vault/shamir"
 	log "github.com/sirupsen/logrus"
@@ -35,7 +36,11 @@ const (
 	AZUREKEYVAULT_WRAPPER_VAULT_NAME
 	AZUREKEYVAULT_WRAPPER_KEY_NAME
 	*/
-	version = "0.2"
+	/*Yandex Cloud
+	YANDEXCLOUD_KMS_KEY_ID
+	YANDEXCLOUD_OAUTH_TOKEN or YANDEXCLOUD_SERVICE_ACCOUNT_KEY_FILE (or VM service account metadata)
+	*/
+	version = "0.3"
 )
 
 func main() {
@@ -45,7 +50,7 @@ func main() {
 	log.SetLevel(log.DebugLevel)
 	log.Infof("Starting version %s", version)
 
-	cloud := flag.String("env", "gcpckms", "Environment that hosts the KMS: gcpckms,azurekeyvault,transit,awskms")
+	cloud := flag.String("env", "gcpckms", "Environment that hosts the KMS: gcpckms,azurekeyvault,transit,awskms,yandexcloudkms")
 	encKey := flag.String("enc-key", "key.enc", "Path to the encrypted recovery keys from the storage, found at core/_recovery-key")
 	storageType := flag.String("storage-type", "file", "Storage type: file or dynamodb")
 	shares := flag.Int("shamir-shares", 1, "Number of shamir shares to divide the key into")
@@ -120,6 +125,8 @@ func main() {
 		wrapper, err = getWrapperAzure()
 	case "awskms":
 		wrapper, err = getWrapperAws(blobInfo)
+	case "yandexcloudkms", "yckms":
+		wrapper, err = getWrapperYandex()
 	default:
 		log.Fatalf("Environment not implemented: %s", *cloud)
 
@@ -196,6 +203,22 @@ func getWrapperAzure() (wrapping.Wrapper, error) {
 	}
 	return s, nil
 
+}
+func getWrapperYandex() (wrapping.Wrapper, error) {
+	log.Infof("Setting up for yandexcloudkms")
+
+	// The blob's KeyInfo only stores the KMS key *version* ID, so the key ID
+	// Vault was configured with has to be provided explicitly
+	if os.Getenv(yandexcloudkms.EnvYandexCloudKMSKeyID) == "" {
+		return nil, fmt.Errorf("%s environment variable must be set to the kms_key_id from the Vault seal configuration", yandexcloudkms.EnvYandexCloudKMSKeyID)
+	}
+
+	s := yandexcloudkms.NewWrapper(nil)
+	_, err := s.SetConfig(nil)
+	if err != nil {
+		return nil, err
+	}
+	return s, nil
 }
 func readBinBase64Decode(filename string) ([]byte, error) {
 	file, err := os.Open(filename)
